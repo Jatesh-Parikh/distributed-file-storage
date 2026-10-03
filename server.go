@@ -8,7 +8,7 @@ import (
 	"go-distributed-file-storage/p2p"
 	"io"
 
-	// "log"
+	"log"
 	"sync"
 	"time"
 	// "github.com/anthdm/foreverstore/p2p"
@@ -165,6 +165,21 @@ func (s *FileServer) Store(key string, r io.Reader) error {
 	}
 
 	fmt.Printf("[%s] received and written (%d) bytes to disk\n", s.Transport.Addr(), n)
+
+	return nil
+}
+
+func (s *FileServer) Stop() {
+	close(s.quitch)
+}
+
+func (s *FileServer) OnPeer(p p2p.Peer) error {
+	s.peerLock.Lock()
+	defer s.peerLock.Unlock()
+
+	s.peers[p.RemoteAddr().String()] = p
+
+	log.Printf("connected with remote %s", p.RemoteAddr())
 
 	return nil
 }
