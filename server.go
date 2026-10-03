@@ -123,3 +123,48 @@ func (s *FileServer) Get(key string) (io.Reader, error) {
 	_, r, err := s.store.Read(s.ID, key)
 	return r, err
 }
+
+func (s *FileServer) Store(key string, r io.Reader) error {
+	var (
+		fileBuffer = new(bytes.Buffer)
+		tee        = io.TeeReader(r, fileBuffer)
+	)
+
+	size, err := s.store.Write(s.ID, key, tee)
+
+	if err != nil {
+		return err
+	}
+
+	msg := Message{
+		Payload: MessageStoreFile{
+			ID:   s.ID,
+			Key:  hashKey(key),
+			Size: size + 16,
+		},
+	}
+
+	if err := s.broadcast(&msg); err != nil {
+		return err
+	}
+
+	time.Sleep(time.Millisecond * 5)
+
+	peers := []io.Writer{}
+
+	for _, peer := range s.peers {
+		peers = append(peers, peer)
+	}
+
+	mw := io.MultiWriter(peers...)
+	mw.Write([]byte{p2p.IncomingStream})
+	n, err := copyEncrypt(s.EncKey, fileBuffer, mw)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("[%s] received and written (%d) bytes to disk\n", s.Transport.Addr(), n)
+
+	return nil
+}
