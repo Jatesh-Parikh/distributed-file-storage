@@ -254,3 +254,23 @@ func (s *FileServer) handleMessageGetFile(from string, msg MessageGetFile) error
 
 	return nil
 }
+
+func (s *FileServer) handleMessageStoreFile(from string, msg MessageStoreFile) error {
+	peer, ok := s.peers[from]
+
+	if !ok {
+		return fmt.Errorf("peer (%s) could not be found in the peer list", from)
+	}
+
+	n, err := s.store.Write(msg.ID, msg.Key, io.LimitReader(peer, msg.Size))
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("[%s] written %d bytes to disk\n", s.Transport.Addr(), n)
+
+	peer.CloseStream()
+
+	return nil
+}
