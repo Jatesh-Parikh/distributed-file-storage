@@ -11,7 +11,6 @@ import (
 	"log"
 	"sync"
 	"time"
-	// "github.com/anthdm/foreverstore/p2p"
 )
 
 type FileServerOpts struct {
