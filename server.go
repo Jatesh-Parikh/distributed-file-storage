@@ -274,3 +274,20 @@ func (s *FileServer) handleMessageStoreFile(from string, msg MessageStoreFile) e
 
 	return nil
 }
+
+func (s *FileServer) bootstrapNetwork() error {
+	for _, addr := range s.BootstrapNodes {
+		if len(addr) == 0 {
+			continue
+		}
+
+		go func(addr string) {
+			fmt.Printf("[%s] attempting to connect with remote %s\n", s.Transport.Addr(), addr)
+			if err := s.Transport.Dial(addr); err != nil {
+				log.Println("dial error: ", err)
+			}
+		}(addr)
+	}
+
+	return nil
+}
