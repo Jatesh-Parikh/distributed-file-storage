@@ -291,3 +291,22 @@ func (s *FileServer) bootstrapNetwork() error {
 
 	return nil
 }
+
+func (s *FileServer) Start() error {
+	fmt.Printf("[%s] starting fileserver...\n", s.Transport.Addr())
+
+	if err := s.Transport.ListenAndAccept(); err != nil {
+		return err
+	}
+
+	s.bootstrapNetwork()
+
+	s.loop()
+
+	return nil
+}
+
+func init() {
+	gob.Register(MessageStoreFile{})
+	gob.Register(MessageGetFile{})
+}
